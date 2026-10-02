@@ -37,7 +37,23 @@ class GardenStore(context: Context) {
         preferences.edit().putLong(careKey(id, care), at).apply()
     }
 
-    fun loadCountry(): String = preferences.getString(KEY_COUNTRY, DEFAULT_COUNTRY) ?: DEFAULT_COUNTRY
+    fun loadCountry(): String {
+        val stored = preferences.getString(KEY_COUNTRY, DEFAULT_COUNTRY) ?: DEFAULT_COUNTRY
+        return when (stored) {
+            "Brunei" -> "BN"
+            "Kamboja", "Cambodia" -> "KH"
+            "Indonesia" -> "ID"
+            "Laos" -> "LA"
+            "Malaysia" -> "MY"
+            "Myanmar" -> "MM"
+            "Filipina", "Philippines" -> "PH"
+            "Singapura", "Singapore" -> "SG"
+            "Thailand" -> "TH"
+            "Timor-Leste" -> "TL"
+            "Vietnam" -> "VN"
+            else -> stored
+        }
+    }
 
     fun saveCountry(country: String) {
         preferences.edit().putString(KEY_COUNTRY, country).apply()
@@ -51,7 +67,7 @@ class GardenStore(context: Context) {
     private companion object {
         const val KEY_PLANTS = "plants"
         const val KEY_COUNTRY = "country"
-        const val DEFAULT_COUNTRY = "Indonesia"
+        const val DEFAULT_COUNTRY = "ID"
         const val CARE_PREFIX = "care."
         const val CARE_WATER = "water"
         const val CARE_FEED = "feed"

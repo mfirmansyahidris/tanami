@@ -1,6 +1,7 @@
 package fi.dev.tanami.ui
 
 import android.net.Uri
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -37,7 +38,6 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -51,6 +51,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -61,28 +62,39 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.os.LocaleListCompat
 import coil.compose.AsyncImage
 import fi.dev.tanami.ai.PlantDiagnostician
 import fi.dev.tanami.data.GardenEntry
 import fi.dev.tanami.data.GardenStore
 import fi.dev.tanami.data.PlantCatalog
 import fi.dev.tanami.data.PlantGuide
+import fi.dev.tanami.data.SoutheastAsianCountries
+import fi.dev.tanami.R
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
-private enum class AppTab(val title: String) {
-    HOME("Beranda"), PLANTS("Tanam"), GARDEN("Kebun"), DIAGNOSE("Analisis")
+private enum class AppTab(@androidx.annotation.StringRes val title: Int) {
+    HOME(R.string.tab_home), PLANTS(R.string.tab_plants), GARDEN(R.string.tab_garden), DIAGNOSE(R.string.tab_analysis)
 }
 
 @Composable
 fun TanamiApp() {
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val isEnglish = configuration.locales[0]?.language == "en"
     val store = remember { GardenStore(context.applicationContext) }
     var entries by remember { mutableStateOf(store.loadPlants()) }
     var country by remember { mutableStateOf(store.loadCountry()) }
+    val countryName = stringResource(SoutheastAsianCountries.byCode(country).label)
     var activeTab by rememberSaveable { mutableStateOf(AppTab.HOME) }
     var selectedPlant by remember { mutableStateOf<PlantGuide?>(null) }
 
@@ -102,7 +114,7 @@ fun TanamiApp() {
                         selected = activeTab == tab && selectedPlant == null,
                         onClick = { selectedPlant = null; activeTab = tab },
                         icon = { Icon(image, contentDescription = null) },
-                        label = { Text(tab.title) }
+                        label = { Text(stringResource(tab.title)) }
                     )
                 }
             }
@@ -122,8 +134,13 @@ fun TanamiApp() {
                 )
                 activeTab == AppTab.HOME -> HomeScreen(
                     entries = entries,
-                country = country,
-                onCountryChange = { selected -> store.saveCountry(selected); country = selected },
+                    country = countryName,
+                    isEnglish = isEnglish,
+                    onLanguageChange = {
+                        val languageTag = if (isEnglish) "id" else "en"
+                        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(languageTag))
+                    },
+                    onCountryChange = { selected -> store.saveCountry(selected); country = selected },
                     onExplore = { activeTab = AppTab.PLANTS },
                     onPlant = openPlant
                 )
@@ -135,7 +152,7 @@ fun TanamiApp() {
                     onRemove = { id -> store.removePlant(id); entries = store.loadPlants() },
                     onCare = { id, care -> store.recordCare(id, care); entries = store.loadPlants() }
                 )
-                else -> DiagnoseScreen(country = country)
+                else -> DiagnoseScreen(country = countryName, isEnglish = isEnglish)
             }
         }
     }
@@ -145,11 +162,14 @@ fun TanamiApp() {
 private fun HomeScreen(
     entries: List<GardenEntry>,
     country: String,
+    isEnglish: Boolean,
+    onLanguageChange: () -> Unit,
     onCountryChange: (String) -> Unit,
     onExplore: () -> Unit,
     onPlant: (PlantGuide) -> Unit
 ) {
     var showCountries by rememberSaveable { mutableStateOf(false) }
+    val languageSwitchDescription = stringResource(R.string.language_switch_description)
     val firstPlants = PlantCatalog.plants.take(3)
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -163,16 +183,22 @@ private fun HomeScreen(
                 }
                 Spacer(Modifier.width(11.dp))
                 Column {
-                    Text("Tanami", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Tumbuhkan sesuatu hari ini", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.app_name), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.app_tagline), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
                 Spacer(Modifier.weight(1f))
-                Text("🌤️", style = MaterialTheme.typography.headlineSmall)
+                TextButton(onClick = onLanguageChange, contentPadding = PaddingValues(horizontal = 10.dp)) {
+                    Text(
+                        if (isEnglish) "ID" else "EN",
+                        modifier = Modifier.semantics { contentDescription = languageSwitchDescription },
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
         item {
             TextButton(onClick = { showCountries = true }, contentPadding = PaddingValues(horizontal = 0.dp)) {
-                Text("🌏  $country · Atur lokasi kebun  ▾", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.location_label, country), color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
             }
         }
         item {
@@ -181,22 +207,22 @@ private fun HomeScreen(
                 shape = MaterialTheme.shapes.large
             ) {
                 Column(Modifier.padding(22.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text("Dari benih ke panen", style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.hero_title), style = MaterialTheme.typography.headlineSmall, color = Color.White, fontWeight = FontWeight.Bold)
                     Text(
-                        "Panduan menanam sayur dan buah yang cocok dimulai di rumah.",
+                        stringResource(R.string.hero_description),
                         style = MaterialTheme.typography.bodyMedium,
                         color = Color.White.copy(alpha = .86f)
                     )
                     Button(onClick = onExplore, contentPadding = PaddingValues(horizontal = 18.dp, vertical = 11.dp)) {
                         Icon(Icons.Outlined.Explore, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("Cari tanaman")
+                        Text(stringResource(R.string.browse_plants))
                     }
                 }
             }
         }
         item {
-            SectionTitle("Kebunmu hari ini", "${entries.size} tanaman aktif")
+            SectionTitle(stringResource(R.string.garden_today), pluralStringResource(R.plurals.active_plants, entries.size, entries.size))
             Spacer(Modifier.height(10.dp))
             if (entries.isEmpty()) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
@@ -204,8 +230,8 @@ private fun HomeScreen(
                         Text("🪴", style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
-                            Text("Kebunmu masih kosong", fontWeight = FontWeight.SemiBold)
-                            Text("Pilih tanaman untuk memulai perjalanan.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.empty_garden_title), fontWeight = FontWeight.SemiBold)
+                            Text(stringResource(R.string.empty_garden_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                         }
                     }
                 }
@@ -217,63 +243,63 @@ private fun HomeScreen(
                 }
             }
         }
-        item { SectionTitle("Mulai dengan yang mudah", "Panen dalam sekitar 90 hari") }
+        item { SectionTitle(stringResource(R.string.easy_start), stringResource(R.string.harvest_within_90)) }
         items(firstPlants) { plant -> PlantCard(plant = plant, onClick = { onPlant(plant) }) }
         item {
             Text(
-                "Perkiraan panen dapat berubah menurut varietas, cuaca, dan cara hitung pada kemasan benih.",
+                stringResource(R.string.harvest_estimate_disclaimer),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
     }
     if (showCountries) {
-        val countries = listOf("Brunei", "Kamboja", "Indonesia", "Laos", "Malaysia", "Myanmar", "Filipina", "Singapura", "Thailand", "Timor-Leste", "Vietnam")
         AlertDialog(
             onDismissRequest = { showCountries = false },
-            title = { Text("Pilih lokasimu") },
+            title = { Text(stringResource(R.string.choose_location)) },
             text = {
                 LazyColumn(modifier = Modifier.height(360.dp)) {
-                    items(countries) { option ->
+                    items(SoutheastAsianCountries.options) { option ->
+                        val name = stringResource(option.label)
                         TextButton(
-                            onClick = { onCountryChange(option); showCountries = false },
+                            onClick = { onCountryChange(option.code); showCountries = false },
                             modifier = Modifier.fillMaxWidth(),
                             contentPadding = PaddingValues(vertical = 12.dp)
                         ) {
-                            Text(option, modifier = Modifier.weight(1f), color = if (option == country) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
-                            if (option == country) Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                            Text(name, modifier = Modifier.weight(1f), color = if (name == country) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                            if (name == country) Text("✓", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
             },
-            confirmButton = { TextButton(onClick = { showCountries = false }) { Text("Selesai") } }
+            confirmButton = { TextButton(onClick = { showCountries = false }) { Text(stringResource(R.string.done)) } }
         )
     }
 }
 
 @Composable
 private fun PlantCatalogScreen(onPlant: (PlantGuide) -> Unit) {
-    var category by rememberSaveable { mutableStateOf("Semua") }
-    val categories = listOf("Semua", "Daun", "Buah sayur")
-    val plants = PlantCatalog.plants.filter { category == "Semua" || it.category == category }
+    var category by rememberSaveable { mutableIntStateOf(R.string.category_all) }
+    val categories = listOf(R.string.category_all, R.string.category_leafy, R.string.category_fruiting)
+    val plants = PlantCatalog.plants.filter { category == R.string.category_all || it.category == category }
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 20.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Text("Pilih tanaman", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Mulai dari tanaman yang cocok dengan ruang dan waktumu.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.catalog_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.catalog_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 categories.forEach { item ->
-                    FilterChip(selected = category == item, onClick = { category = item }, label = { Text(item) })
+                    FilterChip(selected = category == item, onClick = { category = item }, label = { Text(stringResource(item)) })
                 }
             }
         }
         items(plants) { plant -> PlantCard(plant = plant, onClick = { onPlant(plant) }) }
-        item { Text("Katalog awal berisi panduan ringkas. Lokasi dan varietas akan dipakai untuk menyesuaikan rekomendasi berikutnya.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text(stringResource(R.string.catalog_note), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -286,11 +312,11 @@ private fun PlantCard(plant: PlantGuide, onClick: () -> Unit) {
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(3.dp)) {
-                Text(plant.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text(plant.category, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("⏱  ${plant.harvestDays} sampai panen", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                Text(stringResource(plant.name), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(stringResource(plant.category), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.harvest_time_card, stringResource(plant.harvestDays)), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             }
-            Icon(Icons.Outlined.ArrowForward, contentDescription = "Lihat panduan", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+            Icon(Icons.Outlined.ArrowForward, contentDescription = stringResource(R.string.open_guide), tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -311,41 +337,41 @@ private fun PlantDetailScreen(
             TextButton(onClick = onBack, contentPadding = PaddingValues(horizontal = 0.dp)) {
                 Icon(Icons.Outlined.ArrowBack, contentDescription = null)
                 Spacer(Modifier.width(6.dp))
-                Text("Kembali")
+                Text(stringResource(R.string.back))
             }
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = MaterialTheme.shapes.large) {
                 Row(Modifier.fillMaxWidth().padding(20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(plant.icon, style = MaterialTheme.typography.displaySmall)
                     Spacer(Modifier.width(16.dp))
                     Column {
-                        Text(plant.name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-                        Text(plant.variety, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text("Panen sekitar ${plant.harvestDays}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(plant.name), style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        Text(stringResource(plant.variety), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(stringResource(R.string.harvest_around, stringResource(plant.harvestDays)), color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
         }
-        item { InfoSection("🌱  Cara mulai", plant.plantingMethod) }
-        item { InfoSection("☀️  Cahaya", plant.light) }
-        item { InfoSection("🪴  Media tanam", plant.medium) }
-        item { InfoSection("💧  Air", plant.watering) }
-        item { InfoSection("🌿  Nutrisi", plant.nutrients) }
+        item { InfoSection(stringResource(R.string.section_planting), stringResource(plant.plantingMethod)) }
+        item { InfoSection(stringResource(R.string.section_light), stringResource(plant.light)) }
+        item { InfoSection(stringResource(R.string.section_medium), stringResource(plant.medium)) }
+        item { InfoSection(stringResource(R.string.section_water), stringResource(plant.watering)) }
+        item { InfoSection(stringResource(R.string.section_nutrients), stringResource(plant.nutrients)) }
         item {
-            DetailListSection("Perlakuan tanaman", plant.care)
+            DetailListSection(R.string.section_treatments, plant.care)
         }
         item {
-            DetailListSection("Hama dan gangguan yang perlu dicek", plant.problems)
+            DetailListSection(R.string.section_pests, plant.problems)
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3D8))) {
-                Text("ℹ️  ${plant.harvestBasis}\n\n${plant.note}", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
+                Text("ℹ️  ${stringResource(plant.harvestBasis)}\n\n${stringResource(plant.note)}", modifier = Modifier.padding(16.dp), style = MaterialTheme.typography.bodySmall)
             }
         }
         item {
             Button(onClick = onAdd, enabled = !isInGarden, modifier = Modifier.fillMaxWidth().height(54.dp)) {
                 Icon(if (isInGarden) Icons.Outlined.Spa else Icons.Outlined.Add, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (isInGarden) "Sudah ada di kebunmu" else "Mulai tanam ini")
+                Text(stringResource(if (isInGarden) R.string.added_to_garden else R.string.start_growing))
             }
         }
     }
@@ -362,11 +388,11 @@ private fun InfoSection(title: String, body: String) {
 }
 
 @Composable
-private fun DetailListSection(title: String, items: List<String>) {
+private fun DetailListSection(@androidx.annotation.StringRes title: Int, items: List<Int>) {
     Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-            items.forEach { Text("•  $it", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            items.forEach { Text("•  ${stringResource(it)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant) }
         }
     }
 }
@@ -385,17 +411,17 @@ private fun GardenScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Text("Kebunku", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Catat perjalanan tanam dari hari pertama.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.garden_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.garden_subtitle), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         if (entries.isEmpty()) {
             item {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
                     Column(Modifier.fillMaxWidth().padding(22.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
                         Text("🪴", style = MaterialTheme.typography.displaySmall)
-                        Text("Belum ada tanaman", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                        Text("Tambahkan tanaman untuk mulai melihat panduan dan catatan pertumbuhannya.", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Button(onClick = onExplore) { Text("Jelajahi tanaman") }
+                        Text(stringResource(R.string.garden_empty_title), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text(stringResource(R.string.garden_empty_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Button(onClick = onExplore) { Text(stringResource(R.string.explore_plants)) }
                     }
                 }
             }
@@ -408,20 +434,22 @@ private fun GardenScreen(
                             Text(plant.icon, style = MaterialTheme.typography.headlineMedium)
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
-                                Text(plant.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                            Text("Hari ke-${daysSince(entry.startedAt)} · Target ${plant.harvestDays}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(stringResource(plant.name), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                                Text(stringResource(R.string.day_and_target, daysSince(entry.startedAt), stringResource(plant.harvestDays)), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             TextButton(onClick = { onRemove(plant.id) }) {
-                                Icon(Icons.Outlined.DeleteOutline, contentDescription = "Hapus dari kebun")
+                                Icon(Icons.Outlined.DeleteOutline, contentDescription = stringResource(R.string.remove_from_garden))
                             }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            OutlinedButton(onClick = { onPlant(plant) }, modifier = Modifier.weight(1f)) { Text("Panduan") }
-                            OutlinedButton(onClick = { onCare(plant.id, "water") }, modifier = Modifier.weight(1f)) { Text("Sudah siram") }
-                            OutlinedButton(onClick = { onCare(plant.id, "feed") }, modifier = Modifier.weight(1f)) { Text("Catat pupuk") }
+                            OutlinedButton(onClick = { onPlant(plant) }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.guide_button)) }
+                            OutlinedButton(onClick = { onCare(plant.id, "water") }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.watered_button)) }
+                            OutlinedButton(onClick = { onCare(plant.id, "feed") }, modifier = Modifier.weight(1f)) { Text(stringResource(R.string.feed_button)) }
                         }
+                        val wateredAt = entry.lastWateredAt?.let { elapsedSince(it) } ?: stringResource(R.string.not_logged)
+                        val fedAt = entry.lastFedAt?.let { elapsedSince(it) } ?: stringResource(R.string.not_logged)
                         Text(
-                            "Terakhir disiram: ${entry.lastWateredAt?.let(::elapsedSince) ?: "belum dicatat"} · Pupuk: ${entry.lastFedAt?.let(::elapsedSince) ?: "belum dicatat"}",
+                            stringResource(R.string.care_last_logged, wateredAt, fedAt),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -429,7 +457,7 @@ private fun GardenScreen(
                 }
             }
         }
-        item { Text("Catatan perawatan disimpan di perangkat ini. Tombol mencatat tindakan yang kamu lakukan; cek media sebelum menyiram.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        item { Text(stringResource(R.string.care_local_note), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
     }
 }
 
@@ -440,9 +468,10 @@ private fun GardenMiniCard(plant: PlantGuide, entry: GardenEntry, onClick: () ->
             Text(plant.icon, style = MaterialTheme.typography.headlineSmall)
             Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
-                Text(plant.name, fontWeight = FontWeight.SemiBold)
-                val careStatus = entry.lastWateredAt?.let(::elapsedSince)?.let { "Disiram $it" } ?: "Cek kelembapan media"
-                Text("Hari ke-${daysSince(entry.startedAt)} · $careStatus", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                Text(stringResource(plant.name), fontWeight = FontWeight.SemiBold)
+                val careStatus = entry.lastWateredAt?.let { stringResource(R.string.watered_status, elapsedSince(it)) }
+                    ?: stringResource(R.string.check_moisture)
+                Text(stringResource(R.string.day_care_status, daysSince(entry.startedAt), careStatus), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }
             Icon(Icons.Outlined.ArrowBack, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.primary)
         }
@@ -450,7 +479,7 @@ private fun GardenMiniCard(plant: PlantGuide, entry: GardenEntry, onClick: () ->
 }
 
 @Composable
-private fun DiagnoseScreen(country: String) {
+private fun DiagnoseScreen(country: String, isEnglish: Boolean) {
     val context = LocalContext.current
     val diagnostician = remember { PlantDiagnostician(context.applicationContext) }
     val scope = rememberCoroutineScope()
@@ -470,15 +499,15 @@ private fun DiagnoseScreen(country: String) {
         verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
         item {
-            Text("Analisis tanaman", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-            Text("Foto gejala untuk mendapat kemungkinan penyebab dan langkah pemeriksaan.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.diagnosis_title), style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.diagnosis_description), color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer), shape = MaterialTheme.shapes.large) {
                 Column(Modifier.fillMaxWidth().padding(18.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Icon(Icons.Outlined.BugReport, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                    Text("Pemeriksaan awal dengan AI", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                    Text("Gemini akan melihat foto dan membantu menyaring kemungkinan masalah. Hasilnya bukan diagnosis pasti.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(stringResource(R.string.ai_initial_check), style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                    Text(stringResource(R.string.ai_explanation), color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -486,7 +515,7 @@ private fun DiagnoseScreen(country: String) {
             if (imageUri != null) {
                 AsyncImage(
                     model = imageUri,
-                    contentDescription = "Foto tanaman yang dipilih",
+                    contentDescription = stringResource(R.string.selected_plant_photo),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxWidth().height(230.dp).clip(MaterialTheme.shapes.large)
                 )
@@ -495,8 +524,8 @@ private fun DiagnoseScreen(country: String) {
                     Column(Modifier.fillMaxWidth().height(190.dp).padding(18.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
                         Icon(Icons.Outlined.CameraAlt, contentDescription = null, modifier = Modifier.size(42.dp), tint = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(8.dp))
-                        Text("Pilih foto yang terang dan fokus", fontWeight = FontWeight.SemiBold)
-                        Text("Foto daun dari atas dan bawah membantu pemeriksaan.", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.photo_prompt_title), fontWeight = FontWeight.SemiBold)
+                        Text(stringResource(R.string.photo_prompt_description), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
                     }
                 }
             }
@@ -508,13 +537,13 @@ private fun DiagnoseScreen(country: String) {
             ) {
                 Icon(Icons.Outlined.CameraAlt, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
-                Text(if (imageUri == null) "Pilih foto tanaman" else "Ganti foto")
+                Text(stringResource(if (imageUri == null) R.string.choose_photo else R.string.change_photo))
             }
         }
         item {
             Card(colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3D8))) {
                 Text(
-                    "Privasi: foto akan dikirim ke Google Gemini hanya setelah kamu menekan Analisa. Jangan sertakan wajah atau informasi pribadi.",
+                    stringResource(R.string.photo_privacy),
                     modifier = Modifier.padding(15.dp),
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -523,7 +552,7 @@ private fun DiagnoseScreen(country: String) {
         item {
             if (!diagnostician.isConfigured) {
                 Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Text("Analisis foto belum aktif. Tambahkan konfigurasi Firebase untuk fi.dev.tanami; fitur kebun dan panduan tetap tersedia offline.", modifier = Modifier.padding(15.dp), style = MaterialTheme.typography.bodySmall)
+                    Text(stringResource(R.string.firebase_not_configured), modifier = Modifier.padding(15.dp), style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -537,11 +566,11 @@ private fun DiagnoseScreen(country: String) {
                         error = null
                         scope.launch {
                             try {
-                                result = diagnostician.analyze(photo, country)
+                                result = diagnostician.analyze(photo, country, isEnglish)
                             } catch (cancelled: CancellationException) {
                                 throw cancelled
                             } catch (exception: Exception) {
-                                error = exception.message ?: "Analisis gagal. Periksa koneksi dan coba lagi."
+                                error = exception.message ?: context.getString(R.string.analysis_failed)
                             } finally {
                                 isLoading = false
                             }
@@ -551,14 +580,14 @@ private fun DiagnoseScreen(country: String) {
                     modifier = Modifier.fillMaxWidth().height(54.dp)
                 ) {
                     if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = MaterialTheme.colorScheme.onPrimary)
-                    else Text("Analisa foto dengan Gemini")
+                    else Text(stringResource(R.string.analyze_photo))
                 }
             }
         }
-        error?.let { message -> item { InfoSection("Belum berhasil", message) } }
-        result?.let { answer -> item { InfoSection("Hasil pemeriksaan awal", answer) } }
+        error?.let { message -> item { InfoSection(stringResource(R.string.analysis_error_title), message) } }
+        result?.let { answer -> item { InfoSection(stringResource(R.string.analysis_result_title), answer) } }
         item {
-            Text("Tip: bila gejalanya berubah cepat, menjalar, atau seluruh tanaman layu, ambil foto ulang dan minta bantuan penyuluh pertanian setempat.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.diagnosis_tip), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -571,14 +600,15 @@ private fun SectionTitle(title: String, subtitle: String? = null) {
     }
 }
 
-private fun daysSince(startedAt: Long): Long =
-    (TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - startedAt) + 1).coerceAtLeast(1)
+private fun daysSince(startedAt: Long): Int =
+    (TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - startedAt) + 1).coerceAtLeast(1).toInt()
 
+@Composable
 private fun elapsedSince(timestamp: Long): String {
     val days = TimeUnit.MILLISECONDS.toDays(System.currentTimeMillis() - timestamp)
     return when {
-        days <= 0 -> "hari ini"
-        days == 1L -> "kemarin"
-        else -> "$days hari lalu"
+        days <= 0 -> stringResource(R.string.today)
+        days == 1L -> stringResource(R.string.yesterday)
+        else -> stringResource(R.string.days_ago, days.toInt())
     }
 }

@@ -6,6 +6,8 @@ Tanami is an offline-first Android guide for growing quick-harvest vegetables at
 
 The first development stage establishes the native Android project, Compose UI foundation, app identity, and Firebase AI Logic dependency. Plant guides and garden tracking are local-first. Photo diagnosis uses Gemini through Firebase AI Logic when a Firebase project is configured; the app remains usable without Firebase configuration.
 
+The app supports Indonesian and English. It follows the device language by default and includes an in-app language switch on the home screen. Android 13 and newer also expose both languages in the per-app language settings.
+
 ## Build
 
 Open this directory in Android Studio or run `./gradlew :app:assembleDebug` with Android SDK 36 installed.
