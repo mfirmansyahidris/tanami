@@ -17,4 +17,4 @@ Open this directory in Android Studio or run `./gradlew :app:assembleDebug` with
 3. Download `google-services.json` into `app/` (the file is ignored by Git).
 4. For local debug builds, configure Firebase App Check's debug provider in Firebase Console. Production uses Play Integrity.
 
-Planting timelines and care guidance will be curated and expanded as the catalog is validated for tropical Southeast Asian conditions.
+Planting timelines and care guidance in this prototype are starter estimates. The catalog labels the start point for each harvest range; verify the seed variety and local conditions before expanding these into definitive regional advice. The home screen stores a selected Southeast Asian country locally. City, altitude, and seasonal adaptation are not implemented yet.
