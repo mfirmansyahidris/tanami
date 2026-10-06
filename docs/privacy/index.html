@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f6ef" />
+    <meta name="description" content="Kebijakan privasi Tanami / Tanami Privacy Policy." />
+    <title>Kebijakan Privasi · Tanami</title>
+    <style>
+      :root { color-scheme: light; --ink:#183b2b; --muted:#58675e; --green:#176b43; --line:#dce5dc; --paper:#fff; --wash:#f4f6ef; }
+      * { box-sizing:border-box; }
+      body { margin:0; color:var(--ink); background:var(--wash); font:16px/1.7 system-ui,-apple-system,"Segoe UI",sans-serif; }
+      header { padding:42px 22px 32px; background:#e6f0e4; border-bottom:1px solid var(--line); }
+      .wrap { width:min(900px,100%); margin:auto; }
+      .brand { color:var(--green); font-weight:750; letter-spacing:.04em; }
+      h1 { margin:.45rem 0 .15rem; font-size:clamp(2rem,6vw,3rem); line-height:1.15; letter-spacing:-.04em; }
+      .updated { color:var(--muted); margin:.5rem 0 1.15rem; }
+      .switch { display:flex; gap:8px; }
+      button { border:1px solid #9bb5a3; background:transparent; color:var(--ink); padding:8px 17px; border-radius:999px; font:inherit; cursor:pointer; }
+      button[aria-pressed="true"] { background:var(--green); color:white; border-color:var(--green); }
+      main { padding:26px 22px 56px; }
+      article { background:var(--paper); border:1px solid var(--line); border-radius:20px; padding:clamp(22px,5vw,44px); box-shadow:0 10px 28px #183b2b0b; }
+      h2 { margin:1.7rem 0 .45rem; font-size:1.28rem; line-height:1.35; }
+      h2:first-child { margin-top:0; }
+      p,ul { margin:.45rem 0 1rem; }
+      li { padding-left:.25rem; margin:.35rem 0; }
+      a { color:var(--green); text-underline-offset:3px; }
+      .notice { margin:20px 0; border-left:4px solid #83ad72; background:#f1f7ed; padding:14px 17px; border-radius:0 12px 12px 0; }
+      footer { padding:0 22px 35px; color:var(--muted); font-size:.92rem; }
+      [hidden] { display:none !important; }
+      @media(max-width:520px) { header { padding-top:30px; } article { border-radius:15px; } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="wrap">
+        <div class="brand">🌱 TANAMI</div>
+        <h1 id="page-title">Kebijakan Privasi</h1>
+        <p class="updated" id="updated-id">Terakhir diperbarui: 6 Oktober 2026</p>
+        <p class="updated" id="updated-en" hidden>Last updated: October 6, 2026</p>
+        <div class="switch" role="group" aria-label="Pilih bahasa / Choose language">
+          <button type="button" data-lang="id" aria-pressed="true">Bahasa Indonesia</button>
+          <button type="button" data-lang="en" aria-pressed="false">English</button>
+        </div>
+      </div>
+    </header>
+    <main class="wrap">
+      <article id="policy-id" lang="id">
+        <h2>Tentang kebijakan ini</h2>
+        <p>Kebijakan ini menjelaskan bagaimana aplikasi Tanami (“Tanami”) menangani informasi saat Anda menggunakan panduan tanaman, kebun, pengingat, dan fitur analisis foto. Tanami dikembangkan untuk membantu perawatan tanaman sehari-hari.</p>
+
+        <h2>Informasi yang disimpan di perangkat</h2>
+        <p>Tanami menyimpan data aplikasi secara lokal di perangkat Anda, termasuk pilihan bahasa, tanaman di kebun, tanggal mulai tanam dan metode tanam, catatan perawatan, hasil panen, pengamatan/gejala dan catatan yang Anda tulis, serta preferensi pengingat. Tanami tidak memerlukan akun dan tidak mengirim data kebun ini ke server Tanami.</p>
+        <p>Data lokal tetap ada sampai Anda menghapus catatan melalui fitur terkait, menghapus data aplikasi dari pengaturan perangkat, atau mencopot pemasangan Tanami. Menghapus tanaman dari kebun juga menghapus catatan perawatan dan pengamatan yang terkait dengannya. Pengaturan seperti bahasa dapat dihapus dengan menghapus data aplikasi atau mencopot pemasangan Tanami.</p>
+
+        <h2>Analisis foto tanaman dengan AI</h2>
+        <p>Jika Anda memilih untuk menjalankan analisis foto, foto yang Anda pilih atau ambil, nama tanaman (jika tersedia), gejala yang dipilih, catatan yang Anda masukkan, dan bahasa jawaban dikirim melalui Firebase AI Logic ke layanan Gemini dari Google untuk menghasilkan analisis. Foto tidak disimpan di kebun Tanami atau server Tanami. Jangan sertakan wajah, dokumen, informasi pribadi, atau hal sensitif dalam foto maupun catatan.</p>
+        <div class="notice"><strong>Perhatian tentang layanan AI gratis:</strong> untuk penggunaan Gemini API tanpa biaya, Google menyatakan bahwa konten yang dikirim dan respons dapat digunakan untuk mengembangkan serta meningkatkan layanan, dan dapat ditinjau oleh penilai manusia. Hindari mengirim informasi sensitif atau rahasia. Pemrosesan oleh Google mengikuti ketentuan dan kebijakan Google yang berlaku. <a href="https://ai.google.dev/gemini-api/terms">Ketentuan Gemini API</a>.</div>
+        <p>Hasil AI hanya merupakan panduan awal, dapat keliru, dan bukan diagnosis profesional. Anda dapat menggunakan Tanami tanpa menjalankan analisis AI.</p>
+
+        <h2>Kamera, foto, dan izin</h2>
+        <p>Izin kamera diminta hanya jika Anda memilih untuk mengambil foto. Anda juga dapat memilih gambar melalui pemilih foto sistem perangkat. Tanami tidak mengakses foto untuk analisis tanpa tindakan Anda.</p>
+
+        <h2>Pengingat dan informasi teknis</h2>
+        <p>Jika Anda mengaktifkannya, pengingat perawatan dijadwalkan sebagai notifikasi lokal di perangkat. Tanami tidak menggunakan server notifikasi jarak jauh. Firebase App Check dapat mengirim token integritas aplikasi/perangkat serta informasi teknis terkait kepada Google/Firebase untuk membantu mencegah penyalahgunaan dan melindungi layanan.</p>
+
+        <h2>Pihak yang menerima informasi</h2>
+        <p>Tanami tidak menjual data pribadi dan tidak menayangkan iklan. Informasi foto dan teks hanya dikirim ke Google/Firebase ketika Anda meminta analisis AI. Google/Firebase dapat memproses informasi teknis yang diperlukan untuk menjalankan dan mengamankan layanannya. Selain itu, data kebun tetap di perangkat Anda.</p>
+
+        <h2>Keamanan dan penyimpanan</h2>
+        <p>Data kebun disimpan dalam ruang penyimpanan aplikasi di perangkat. Informasi analisis dikirim ke layanan Google melalui SDK Firebase. Tidak ada sistem server Tanami yang menyimpan data akun, kebun, atau foto. Lama pemrosesan dan penyimpanan oleh Google mengikuti ketentuan layanan Google yang berlaku untuk konfigurasi layanan Anda.</p>
+
+        <h2>Anak-anak</h2>
+        <p>Tanami adalah aplikasi berkebun untuk khalayak umum dan tidak dirancang khusus untuk anak-anak. Tanami tidak dengan sengaja meminta anak memberikan data pribadi.</p>
+
+        <h2>Perubahan dan kontak</h2>
+        <p>Kebijakan ini dapat diperbarui jika fitur atau cara pemrosesan data berubah. Versi terbaru akan tersedia di halaman ini. Untuk pertanyaan atau permintaan privasi, hubungi pengembang melalui alamat email dukungan yang tercantum pada halaman Tanami di Google Play.</p>
+      </article>
+
+      <article id="policy-en" lang="en" hidden>
+        <h2>About this policy</h2>
+        <p>This policy explains how the Tanami app (“Tanami”) handles information when you use plant guides, your garden, reminders, and photo analysis. Tanami is designed to help with everyday plant care.</p>
+
+        <h2>Information stored on your device</h2>
+        <p>Tanami stores app data locally on your device, including your language choice, garden plants, planting dates and methods, care logs, harvests, observations/symptoms and notes you write, and reminder preferences. Tanami does not require an account and does not send this garden data to a Tanami server.</p>
+        <p>Local data remains until you delete a record through the relevant feature, clear the app’s data in your device settings, or uninstall Tanami. Removing a plant from your garden also removes its related care logs and observations. Settings such as language can be removed by clearing app data or uninstalling Tanami.</p>
+
+        <h2>AI plant photo analysis</h2>
+        <p>If you choose to run photo analysis, the photo you select or take, plant name (if available), selected symptom, your note, and response language are sent through Firebase AI Logic to Google’s Gemini service to generate an analysis. Photos are not stored in your Tanami garden or on a Tanami server. Do not include faces, documents, personal information, or sensitive material in photos or notes.</p>
+        <div class="notice"><strong>About the free AI service:</strong> for use of the Gemini API without charge, Google says submitted content and responses may be used to develop and improve its services and may be reviewed by human reviewers. Avoid sending sensitive or confidential information. Google’s applicable terms and policies govern Google’s processing. <a href="https://ai.google.dev/gemini-api/terms">Gemini API Terms</a>.</div>
+        <p>AI output is initial guidance, may be inaccurate, and is not a professional diagnosis. You can use Tanami without running AI analysis.</p>
+
+        <h2>Camera, photos, and permissions</h2>
+        <p>Camera permission is requested only if you choose to take a photo. You may also select an image through your device’s system photo picker. Tanami does not access photos for analysis unless you initiate the action.</p>
+
+        <h2>Reminders and technical information</h2>
+        <p>If enabled, care reminders are scheduled as local notifications on your device. Tanami does not use a remote push notification server. Firebase App Check may send app/device integrity tokens and related technical information to Google/Firebase to help prevent abuse and protect the service.</p>
+
+        <h2>Who receives information</h2>
+        <p>Tanami does not sell personal data or show ads. Photo and text information is sent to Google/Firebase only when you request AI analysis. Google/Firebase may process technical information needed to operate and secure its services. Your garden data otherwise stays on your device.</p>
+
+        <h2>Security and retention</h2>
+        <p>Garden data is stored in the app’s storage area on your device. Analysis information is sent to Google services through the Firebase SDK. Tanami has no server storing account, garden, or photo data. Google’s processing and retention periods follow the applicable Google service terms for your service configuration.</p>
+
+        <h2>Children</h2>
+        <p>Tanami is a general-audience gardening app and is not specifically designed for children. Tanami does not knowingly ask children to provide personal data.</p>
+
+        <h2>Changes and contact</h2>
+        <p>This policy may be updated when features or data practices change. The latest version will be available on this page. For privacy questions or requests, contact the developer using the support email listed on Tanami’s Google Play page.</p>
+      </article>
+    </main>
+    <footer class="wrap">Tanami · <span id="footer-id">Kebijakan Privasi</span><span id="footer-en" hidden>Privacy Policy</span></footer>
+    <script>
+      const buttons = document.querySelectorAll('[data-lang]');
+      const idPolicy = document.getElementById('policy-id');
+      const enPolicy = document.getElementById('policy-en');
+      function setLanguage(language) {
+        const isEnglish = language === 'en';
+        idPolicy.hidden = isEnglish;
+        enPolicy.hidden = !isEnglish;
+        document.getElementById('updated-id').hidden = isEnglish;
+        document.getElementById('updated-en').hidden = !isEnglish;
+        document.getElementById('footer-id').hidden = isEnglish;
+        document.getElementById('footer-en').hidden = !isEnglish;
+        document.getElementById('page-title').textContent = isEnglish ? 'Privacy Policy' : 'Kebijakan Privasi';
+        document.documentElement.lang = language;
+        document.title = `${isEnglish ? 'Privacy Policy' : 'Kebijakan Privasi'} · Tanami`;
+        buttons.forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.lang === language)));
+      }
+      buttons.forEach((button) => button.addEventListener('click', () => setLanguage(button.dataset.lang)));
+      if (new URLSearchParams(location.search).get('lang') === 'en') setLanguage('en');
+    </script>
+  </body>
+</html>
